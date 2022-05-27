@@ -15,7 +15,7 @@ def obter_dados():
     return dados
 
 
-def listar_categorias(dados) -> set:#
+def listar_categorias(dados) -> set:
     '''
     O parâmetro "dados" deve ser uma lista de dicionários representando os produtos.
     Essa função deverá retornar uma lista contendo todas as categorias dos diferentes produtos.
