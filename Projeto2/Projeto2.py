@@ -112,7 +112,7 @@ def buscar_musico(dicionario_musicos: dict, dados: list, exata_ou_geral):
                     if dados[0] == musico[0]:
                         contador2 += 1
                         break
-                    
+
                     elif dado in musico[1][idx] and musico not in lista_musicos and dado != '':
                         contador2 += 1 #contando número de dados que batem com os inputados pelo usuário
                         
@@ -139,7 +139,7 @@ def buscar_musico(dicionario_musicos: dict, dados: list, exata_ou_geral):
     else:
         raise ErroBusqueda
 
-def montar_banda(dicionario_musicos, genero: str, *instrumentos) -> dict:
+def montar_banda(dicionario_musicos, genero: str, instrumentos) -> dict:
     
     lista_musicos = [(valores[0],instrumento) for instrumento in instrumentos for valores in dicionario_musicos.items() if 
     genero in valores[1][1] and instrumento in valores[1][2]]
@@ -158,7 +158,6 @@ def montar_banda(dicionario_musicos, genero: str, *instrumentos) -> dict:
         if instrumento not in dict_bandas.keys():
             dict_bandas[instrumento] = email
 
-
         elif type(dict_bandas[instrumento]) == str:
             lista_emails = [dict_bandas[instrumento]]
             lista_emails.append(email)
@@ -167,12 +166,49 @@ def montar_banda(dicionario_musicos, genero: str, *instrumentos) -> dict:
         else:
             lista_emails.append(email)
             dict_bandas[instrumento] = lista_emails
-            
-    return dict_bandas
 
-    #lista_emails = 
-    #lista_instrumentos
-    #[(email, instrumento) for email in lista_emails for instrumento in lista_instrumentos]
+    return gera_combinacoes(dict_bandas, instrumentos)    
+
+def gera_combinacoes(dic_musicos, instrumentos, banda=[], combinacoes=[]):
+    
+    dic_musicos_copia = dic_musicos.copy()
+    instrumento = instrumentos[0]
+    musico_por_instrumento = dic_musicos.pop(instrumentos[0])   
+    if type(musico_por_instrumento) == str:
+        musico_por_instrumento = [musico_por_instrumento]
+    instrumentos.remove(instrumentos[0])
+    i = 0
+
+    while i in range(len(musico_por_instrumento)):
+        if [musico_por_instrumento[i], instrumento] in banda:
+            continue        
+        i, booleano = evitar_duplicados(banda, musico_por_instrumento, i, instrumento)        
+        if instrumentos:
+            combinacoes = gera_combinacoes(dic_musicos,instrumentos, banda, combinacoes)
+        elif booleano:
+            combinacoes.append(banda.copy())
+        banda.pop()
+        i += 1
+
+    dic_musicos.update({instrumento: musico_por_instrumento})
+    instrumentos.append(list(dic_musicos_copia.keys())[0])
+
+    return combinacoes
+
+def evitar_duplicados(banda, musico_por_instrumento, contador, instrumento):
+
+    banda.append([musico_por_instrumento[contador],instrumento])
+    for musico_instrumento in banda[:-1]:
+            if musico_por_instrumento[contador] in musico_instrumento and len(banda) > 1:
+                banda.pop() #removendo duplicados
+                try:
+                    banda.append([musico_por_instrumento[contador+1],instrumento]) #appending o seguinte termo
+                    contador += 1
+                except:
+                    banda.append([musico_por_instrumento[contador],instrumento])
+                    return contador, False
+
+    return contador, True
 
 def menu():
     '''
@@ -215,7 +251,11 @@ O que deseja fazer? (Digite o número correspondente)
             print(dicionario_entradas[ponto_de_partida](dicionario_musicos, dados, exata_ou_geral))
 
         elif ponto_de_partida == 4:
-            print(dicionario_entradas[ponto_de_partida](dicionario_musicos, dados[0],*dados[1]))
+            bandas = dicionario_entradas[ponto_de_partida](dicionario_musicos, dados[0],dados[1])
+            for banda in bandas:
+                print('')
+                for musico in banda:
+                    print(f'{musico[1]}: {musico[0]}')
 
         elif ponto_de_partida == 5:
             pass
@@ -224,7 +264,7 @@ O que deseja fazer? (Digite o número correspondente)
 
         continuar = ''
         if ponto_de_partida != 5: #Analisar se iremos continuar rodando o programa.
-            continuar = input('Deseja continuar? S/N\n').lower()
+            continuar = input('\nDeseja continuar? S/N\n').lower()
 
         if continuar == 's':
             menu()
@@ -233,8 +273,7 @@ O que deseja fazer? (Digite o número correspondente)
             pass
         else:
             raise ErroBusqueda
-            
-        # buscar_musico(dicionario_musicos, dados, *dados)
+
     except ErroBusqueda:
         ErroBusqueda
         menu()
