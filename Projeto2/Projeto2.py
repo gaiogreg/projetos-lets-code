@@ -132,8 +132,8 @@ def buscar_musico(dicionario_musicos: dict, dados: list, exata_ou_geral) -> list
                     if dado in musico[1][idx] and musico not in lista_musicos and dado != '':
                         lista_musicos.append(musico)
 
-                    if dados[0] in dicionario_musicos.keys() and musico not in lista_musicos: #este cuida de verificar se o email consta na base de dados
-                        lista_musicos.append((dados[0], dicionario_musicos[dados[0]]))
+        if dados[0] in dicionario_musicos.keys() and (dados[0], dicionario_musicos[dados[0]]) not in lista_musicos: #este cuida de verificar se o email consta na base de dados
+            lista_musicos.append((dados[0], dicionario_musicos[dados[0]]))
         
         return lista_musicos
     
