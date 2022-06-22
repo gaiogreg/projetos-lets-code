@@ -1,4 +1,5 @@
 import json
+from msilib.schema import Error
 
 class ErroNome(Exception):
     def __init__(self, mensagem='O nome digitado possui caracteres inválidos!'):
@@ -93,7 +94,7 @@ def modificar_perfil(dicionario_musicos: dict, dados: dict, chave: str):
             
     else: print('Usuário não encontrado')
 
-def buscar_musico(dicionario_musicos: dict, dados: list, exata_ou_geral):
+def buscar_musico(dicionario_musicos: dict, dados: list, exata_ou_geral) -> list:
     
     if exata_ou_geral.lower() == 'exata':
 
@@ -144,6 +145,8 @@ def montar_banda(dicionario_musicos, genero: str, instrumentos) -> dict:
     lista_musicos = [(valores[0],instrumento) for instrumento in instrumentos for valores in dicionario_musicos.items() if 
     genero in valores[1][1] and instrumento in valores[1][2]]
 
+    lista_musicos = set(lista_musicos)
+
     #valores[0] == email
     #valores[1][1] == generos
     #valores[1][2] == instrumentos
@@ -167,48 +170,53 @@ def montar_banda(dicionario_musicos, genero: str, instrumentos) -> dict:
             lista_emails.append(email)
             dict_bandas[instrumento] = lista_emails
 
-    return gera_combinacoes(dict_bandas, instrumentos)    
+    return gera_combinacoes(dict_bandas, instrumentos,combinacoes=[])    
 
-def gera_combinacoes(dic_musicos, instrumentos, banda=[], combinacoes=[]):
+def gera_combinacoes(dic_musicos: dict, instrumentos: list, banda=[], combinacoes=[], lista_bool=[]):
     
-    dic_musicos_copia = dic_musicos.copy()
     instrumento = instrumentos[0]
-    musico_por_instrumento = dic_musicos.pop(instrumentos[0])   
+    musico_por_instrumento = dic_musicos[instrumento]  
     if type(musico_por_instrumento) == str:
         musico_por_instrumento = [musico_por_instrumento]
-    instrumentos.remove(instrumentos[0])
-    i = 0
+    
+    for musico in musico_por_instrumento:
+     
+        booleano_musico = evitar_musicos_duplicados(banda, musico, instrumento)  
+        lista_bool.append(booleano_musico) 
 
-    while i in range(len(musico_por_instrumento)):
-        if [musico_por_instrumento[i], instrumento] in banda:
-            continue        
-        i, booleano = evitar_duplicados(banda, musico_por_instrumento, i, instrumento)        
-        if instrumentos:
-            combinacoes = gera_combinacoes(dic_musicos,instrumentos, banda, combinacoes)
-        elif booleano:
+        
+        booleano_banda = evitar_bandas_duplicadas(combinacoes, banda)
+        lista_bool.append(booleano_banda)
+
+        if len(instrumentos) > 1 and booleano_musico:
+            combinacoes = gera_combinacoes(dic_musicos,instrumentos[1:], banda, combinacoes, lista_bool)
+
+        elif False not in lista_bool:
             combinacoes.append(banda.copy())
         banda.pop()
-        i += 1
-
-    dic_musicos.update({instrumento: musico_por_instrumento})
-    instrumentos.append(list(dic_musicos_copia.keys())[0])
+        lista_bool.pop()
+        lista_bool.pop()
 
     return combinacoes
 
-def evitar_duplicados(banda, musico_por_instrumento, contador, instrumento):
+def evitar_musicos_duplicados(banda: list, musico: str, instrumento: str):
 
-    banda.append([musico_por_instrumento[contador],instrumento])
+    banda.append([musico,instrumento])
     for musico_instrumento in banda[:-1]:
-            if musico_por_instrumento[contador] in musico_instrumento and len(banda) > 1:
-                banda.pop() #removendo duplicados
-                try:
-                    banda.append([musico_por_instrumento[contador+1],instrumento]) #appending o seguinte termo
-                    contador += 1
-                except:
-                    banda.append([musico_por_instrumento[contador],instrumento])
-                    return contador, False
+            if musico in musico_instrumento:
+                return False
+    return True
 
-    return contador, True
+def evitar_bandas_duplicadas(combinacoes: list, banda: list):
+    lista_bool_banda = []
+    for bandas_formadas in combinacoes:
+            for musico in banda:
+                if musico in bandas_formadas:
+                    lista_bool_banda.append(True)
+                if len(lista_bool_banda) == 3:
+                    return False
+            lista_bool_banda = []
+    return True
 
 def menu():
     '''
@@ -248,7 +256,9 @@ O que deseja fazer? (Digite o número correspondente)
         
         elif ponto_de_partida == 3:
             exata_ou_geral = input('Deseja fazer uma busqueda exata ou geral? ')
-            print(dicionario_entradas[ponto_de_partida](dicionario_musicos, dados, exata_ou_geral))
+            busqueda_musicos = (dicionario_entradas[ponto_de_partida](dicionario_musicos, dados, exata_ou_geral))
+            for musico in busqueda_musicos:
+                print(musico)
 
         elif ponto_de_partida == 4:
             bandas = dicionario_entradas[ponto_de_partida](dicionario_musicos, dados[0],dados[1])
