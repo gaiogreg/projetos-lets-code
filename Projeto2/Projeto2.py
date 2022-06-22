@@ -213,7 +213,7 @@ def evitar_bandas_duplicadas(combinacoes: list, banda: list):
             for musico in banda:
                 if musico in bandas_formadas:
                     lista_bool_banda.append(True)
-                if len(lista_bool_banda) == 3:
+                if len(lista_bool_banda) == len(bandas_formadas):
                     return False
             lista_bool_banda = []
     return True
